@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+ <title>Aurora Calculator | HTML CSS JavaScript</title>
+ <meta name="description" content="Aurora Calculator is a modern responsive calculator built using HTML, CSS and JavaScript with dark mode, history and keyboard support.">
+ <meta name="theme-color" content="#101726">
+
+  <!-- External stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Fonts: Space Grotesk (display/UI) + JetBrains Mono (digits) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Ambient background blobs (purely decorative) -->
+  <div class="bg-glow bg-glow--one" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--two" aria-hidden="true"></div>
+
+  <main class="app">
+
+    <!-- ============ CALCULATOR CARD ============ -->
+    <section class="calculator" aria-label="Calculator">
+
+      <!-- Top bar: title + theme toggle + history toggle -->
+      <header class="calc-topbar">
+        <h1 class="calc-title">Aurora</h1>
+
+        <div class="topbar-actions">
+          <!-- Light / Dark mode toggle -->
+          <button
+            type="button"
+            id="themeToggleBtn"
+            class="icon-btn"
+            aria-label="Toggle light and dark mode"
+            aria-pressed="false"
+            title="Toggle theme"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+            </svg>
+          </button>
+
+          <!-- History panel toggle -->
+          <button
+            type="button"
+            id="historyToggleBtn"
+            class="icon-btn"
+            aria-label="Toggle calculation history panel"
+            aria-pressed="false"
+            aria-controls="historyPanel"
+            title="History"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v5h5"></path>
+              <path d="M3.05 13a9 9 0 1 0 .5-4.5"></path>
+              <path d="M12 7v5l4 2"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- ============ DISPLAY ============ -->
+      <div class="display" id="displayWrapper">
+        <!-- Previous / full expression, small text, scrolls horizontally if long -->
+        <div class="display-expression" id="expressionEl">&nbsp;</div>
+
+        <!-- Current value / result, large text, right aligned -->
+        <div class="display-result-row">
+          <div
+            class="display-result"
+            id="resultEl"
+            role="status"
+            aria-live="polite"
+            aria-label="Calculator display"
+          >0</div>
+
+          <!-- Copy result to clipboard -->
+          <button type="button" id="copyBtn" class="icon-btn icon-btn--ghost" aria-label="Copy result to clipboard" title="Copy result">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============ BUTTON GRID ============ -->
+      <div class="keypad" role="group" aria-label="Calculator keypad">
+
+        <!-- Row 1: Clear, Delete, Percent, Divide -->
+        <button type="button" class="btn btn--function" data-action="clear" aria-label="All clear">AC</button>
+        <button type="button" class="btn btn--function" data-action="delete" aria-label="Delete last digit">⌫</button>
+        <button type="button" class="btn btn--function" data-action="percent" aria-label="Percent">%</button>
+        <button type="button" class="btn btn--operator" data-action="operator" data-operator="÷" aria-label="Divide">÷</button>
+
+        <!-- Row 2: 7 8 9 × -->
+        <button type="button" class="btn btn--number" data-action="number" data-value="7">7</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="8">8</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="9">9</button>
+        <button type="button" class="btn btn--operator" data-action="operator" data-operator="×" aria-label="Multiply">×</button>
+
+        <!-- Row 3: 4 5 6 − -->
+        <button type="button" class="btn btn--number" data-action="number" data-value="4">4</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="5">5</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="6">6</button>
+        <button type="button" class="btn btn--operator" data-action="operator" data-operator="−" aria-label="Subtract">−</button>
+
+        <!-- Row 4: 1 2 3 + -->
+        <button type="button" class="btn btn--number" data-action="number" data-value="1">1</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="2">2</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="3">3</button>
+        <button type="button" class="btn btn--operator" data-action="operator" data-operator="+" aria-label="Add">+</button>
+
+        <!-- Row 5: +/-, 0, ., = -->
+        <button type="button" class="btn btn--function" data-action="negate" aria-label="Toggle positive or negative">+/-</button>
+        <button type="button" class="btn btn--number" data-action="number" data-value="0">0</button>
+        <button type="button" class="btn btn--number" data-action="decimal" aria-label="Decimal point">.</button>
+        <button type="button" class="btn btn--equals" data-action="equals" aria-label="Calculate result">=</button>
+      </div>
+    </section>
+
+    <!-- ============ HISTORY PANEL ============ -->
+    <aside class="history-panel" id="historyPanel" aria-label="Calculation history" hidden>
+      <div class="history-header">
+        <h2 class="history-title">History</h2>
+        <button type="button" id="clearHistoryBtn" class="text-btn" aria-label="Clear all history">Clear</button>
+      </div>
+      <ul class="history-list" id="historyList">
+        <!-- History items are injected here by script.js -->
+        <li class="history-empty" id="historyEmpty">No calculations yet</li>
+      </ul>
+    </aside>
+
+  </main>
+
+  <!-- External script -->
+  <script src="script.js" defer></script>
+</body>
+</html>

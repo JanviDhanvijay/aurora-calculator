@@ -1,0 +1,608 @@
+/* ==========================================================================
+   AURORA CALCULATOR — STYLESHEET
+   --------------------------------------------------------------------------
+   Structure of this file:
+   1. Design tokens (CSS custom properties) — edit these to re-theme the app
+   2. Reset & base
+   3. Background / ambient glow
+   4. Layout (app + calculator card)
+   5. Top bar (title + icon buttons)
+   6. Display (expression + result)
+   7. Keypad (grid + button variants)
+   8. Ripple effect
+   9. History panel
+   10. Animations
+   11. Responsive breakpoints
+   12. Accessibility helpers
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   Change colors, fonts, radii and spacing from one place.
+   -------------------------------------------------------------------------- */
+:root {
+  /* --- Fonts --- */
+  --font-ui: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* --- Core palette (dark theme / default) --- */
+  --bg-deep: #0b0e1a;              /* base background */
+  --bg-gradient-a: #0b0e1a;
+  --bg-gradient-b: #171334;
+  --bg-gradient-c: #1c1030;
+
+  --glow-cyan: #34e6d6;            /* signature accent #1 */
+  --glow-violet: #8b6cf7;          /* signature accent #2 */
+  --glow-magenta: #d94ecb;         /* signature accent #3 */
+
+  --glass-fill: rgba(255, 255, 255, 0.06);
+  --glass-fill-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-shadow: rgba(3, 5, 14, 0.55);
+
+  --text-primary: #f3f4fb;
+  --text-secondary: rgba(243, 244, 251, 0.56);
+  --text-faint: rgba(243, 244, 251, 0.34);
+
+  --btn-number-bg: rgba(255, 255, 255, 0.055);
+  --btn-number-bg-hover: rgba(255, 255, 255, 0.1);
+  --btn-function-bg: rgba(255, 255, 255, 0.09);
+  --btn-function-text: #ffd9a8;
+
+  --btn-operator-bg: rgba(139, 108, 247, 0.18);
+  --btn-operator-text: var(--glow-cyan);
+  --btn-operator-bg-active: rgba(52, 230, 214, 0.28);
+
+  --btn-equals-gradient: linear-gradient(135deg, var(--glow-cyan), var(--glow-violet) 55%, var(--glow-magenta));
+
+  --focus-ring: #34e6d6;
+
+  /* --- Shape / spacing --- */
+  --radius-card: 25px;
+  --radius-display: 18px;
+  --radius-btn: 18px;
+  --gap-grid: 12px;
+  --calc-max-width: 360px;
+
+  /* --- Motion --- */
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-med: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Light theme overrides (applied via [data-theme="light"] on <html>) --- */
+:root[data-theme="light"] {
+  --bg-deep: #eef0fb;
+  --bg-gradient-a: #f4f0ff;
+  --bg-gradient-b: #e7ecff;
+  --bg-gradient-c: #ffe9fb;
+
+  --glow-cyan: #12b8ac;
+  --glow-violet: #6c4fe0;
+  --glow-magenta: #c93fc0;
+
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(70, 60, 120, 0.14);
+  --glass-shadow: rgba(90, 80, 160, 0.22);
+
+  --text-primary: #201c3a;
+  --text-secondary: rgba(32, 28, 58, 0.6);
+  --text-faint: rgba(32, 28, 58, 0.38);
+
+  --btn-number-bg: rgba(255, 255, 255, 0.5);
+  --btn-number-bg-hover: rgba(255, 255, 255, 0.8);
+  --btn-function-bg: rgba(120, 90, 200, 0.12);
+  --btn-function-text: #8a4b12;
+
+  --btn-operator-bg: rgba(108, 79, 224, 0.14);
+  --btn-operator-text: #6f3fce;
+  --btn-operator-bg-active: rgba(18, 184, 172, 0.22);
+}
+
+/* -------------------------------------------------------------------------
+   2. RESET & BASE
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: radial-gradient(ellipse at top left, var(--bg-gradient-b), transparent 60%),
+              radial-gradient(ellipse at bottom right, var(--bg-gradient-c), transparent 55%),
+              var(--bg-gradient-a);
+  overflow-x: hidden;
+  transition: background var(--transition-med), color var(--transition-med);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* -------------------------------------------------------------------------
+   3. BACKGROUND / AMBIENT GLOW
+   Two soft blurred blobs that drift slowly to give the glass depth.
+   -------------------------------------------------------------------------- */
+.bg-glow {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-glow--one {
+  width: 380px;
+  height: 380px;
+  top: -120px;
+  left: -100px;
+  background: var(--glow-violet);
+  animation: drift-one 16s ease-in-out infinite alternate;
+}
+
+.bg-glow--two {
+  width: 320px;
+  height: 320px;
+  bottom: -100px;
+  right: -80px;
+  background: var(--glow-cyan);
+  animation: drift-two 18s ease-in-out infinite alternate;
+}
+
+@keyframes drift-one {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, 40px) scale(1.08); }
+}
+
+@keyframes drift-two {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-25px, -30px) scale(1.1); }
+}
+
+/* -------------------------------------------------------------------------
+   4. LAYOUT
+   -------------------------------------------------------------------------- */
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 16px;
+}
+
+.calculator {
+  width: 100%;
+  max-width: var(--calc-max-width);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-card);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 25px 60px -15px var(--glass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  animation: card-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* -------------------------------------------------------------------------
+   5. TOP BAR
+   -------------------------------------------------------------------------- */
+.calc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calc-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, var(--glow-cyan), var(--glow-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  transition: transform var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--btn-number-bg-hover);
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+.icon-btn--ghost {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+/* Filled state when dark/light toggle or history panel is active */
+.icon-btn[aria-pressed="true"] {
+  color: var(--glow-cyan);
+  border-color: var(--glow-cyan);
+}
+
+/* -------------------------------------------------------------------------
+   6. DISPLAY
+   -------------------------------------------------------------------------- */
+.display {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px 14px;
+  border-radius: var(--radius-display);
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
+  min-height: 96px;
+  justify-content: flex-end;
+}
+
+:root[data-theme="light"] .display {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 2px 10px rgba(90, 80, 160, 0.12);
+}
+
+.display-expression {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-faint);
+  text-align: right;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;       /* Firefox: hide scrollbar but keep scroll */
+  min-height: 1.3em;
+  direction: rtl;               /* keeps the tail (most recent input) visible when overflowing */
+}
+
+.display-expression::-webkit-scrollbar {
+  display: none; /* Chrome/Safari: hide scrollbar but keep scroll */
+}
+
+.display-result-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.display-result {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  line-height: 1.1;
+  text-align: right;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  direction: rtl;
+  flex: 1;
+}
+
+.display-result::-webkit-scrollbar {
+  display: none;
+}
+
+.display-result.is-error {
+  color: #ff6b81;
+  font-size: clamp(1.4rem, 6vw, 1.8rem);
+}
+
+/* -------------------------------------------------------------------------
+   7. KEYPAD
+   -------------------------------------------------------------------------- */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap-grid);
+}
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  min-height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-btn);
+  font-size: 1.15rem;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: var(--btn-number-bg);
+  border: 1px solid var(--glass-border);
+  transition: transform var(--transition-fast), background var(--transition-fast),
+              box-shadow var(--transition-fast), color var(--transition-fast);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover {
+  background: var(--btn-number-bg-hover);
+  transform: translateY(-2px);
+}
+
+.btn:active,
+.btn.is-pressed {
+  transform: translateY(0) scale(0.94);
+}
+
+/* Visible focus ring for keyboard users */
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.text-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.btn--function {
+  color: var(--btn-function-text);
+  background: var(--btn-function-bg);
+  font-size: 1rem;
+}
+
+.btn--operator {
+  color: var(--btn-operator-text);
+  background: var(--btn-operator-bg);
+  font-size: 1.3rem;
+}
+
+.btn--operator.is-active {
+  background: var(--btn-operator-bg-active);
+  box-shadow: 0 0 0 2px var(--glow-cyan) inset;
+}
+
+.btn--equals {
+  background: var(--btn-equals-gradient);
+  color: #0a0e1a;
+  font-weight: 700;
+  font-size: 1.4rem;
+  box-shadow: 0 10px 24px -8px rgba(139, 108, 247, 0.55);
+}
+
+.btn--equals:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+/* -------------------------------------------------------------------------
+   8. RIPPLE EFFECT
+   A <span class="ripple"> is injected by JS on click/tap and animates out.
+   -------------------------------------------------------------------------- */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  background: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  animation: ripple-out 550ms ease-out forwards;
+}
+
+:root[data-theme="light"] .ripple {
+  background: rgba(80, 60, 150, 0.25);
+}
+
+@keyframes ripple-out {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   9. HISTORY PANEL
+   -------------------------------------------------------------------------- */
+.history-panel {
+  width: 100%;
+  max-width: var(--calc-max-width);
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 25px 60px -15px var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  animation: panel-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.history-panel[hidden] {
+  display: none;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.text-btn {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--glow-magenta);
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background var(--transition-fast);
+}
+
+.text-btn:hover {
+  background: rgba(217, 78, 203, 0.14);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.history-item:hover {
+  background: var(--btn-number-bg-hover);
+  border-color: var(--glass-border);
+}
+
+.history-item .h-expression {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.history-item .h-result {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-empty {
+  text-align: center;
+  padding: 20px 0;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+/* -------------------------------------------------------------------------
+   11. RESPONSIVE BREAKPOINTS
+   Mobile-first: base styles above already work from 320px up.
+   These refine spacing/sizing for larger viewports.
+   -------------------------------------------------------------------------- */
+
+/* Very small phones */
+@media (max-width: 340px) {
+  .calculator {
+    padding: 16px;
+    gap: 12px;
+  }
+  :root {
+    --gap-grid: 8px;
+  }
+  .btn {
+    font-size: 1rem;
+  }
+}
+
+/* Tablets and up: allow the history panel to sit beside the calculator */
+@media (min-width: 720px) {
+  .app {
+    align-items: flex-start;
+    padding-top: 8vh;
+  }
+  .history-panel {
+    margin-top: 0;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   12. ACCESSIBILITY HELPERS
+   -------------------------------------------------------------------------- */
+.btn, .icon-btn, .text-btn {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+
+@media (max-height: 600px) and (orientation: landscape) {
+  .app {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .calculator {
+    margin-top: 10px;
+  }
+}
